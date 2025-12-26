@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:w13_quiz/ui/tabs/search_tab.dart';
 import '../../data/mock_grocery_repository.dart';
 import '../../models/grocery.dart';
 import 'grocery_form.dart';
@@ -10,8 +11,12 @@ class GroceryList extends StatefulWidget {
   State<GroceryList> createState() => _GroceryListState();
 }
 
-class _GroceryListState extends State<GroceryList> {
+enum Tab { groceries, search }
 
+class _GroceryListState extends State<GroceryList> {
+  final TextEditingController searchController = TextEditingController();
+  List<Grocery> filteredItems = [];
+  Tab currentTab = Tab.groceries;
   void onCreate() async {
     // Navigate to the form screen using the Navigator push
     Grocery? newGrocery = await Navigator.push<Grocery>(
@@ -23,6 +28,16 @@ class _GroceryListState extends State<GroceryList> {
         dummyGroceryItems.add(newGrocery);
       });
     }
+  }
+
+  void searchItem(String query) async {
+    setState(() {
+      filteredItems = dummyGroceryItems
+          .where(
+            (items) => items.name.toLowerCase().startsWith(query.toLowerCase()),
+          )
+          .toList();
+    });
   }
 
   @override
@@ -43,7 +58,30 @@ class _GroceryListState extends State<GroceryList> {
         title: const Text('Your Groceries'),
         actions: [IconButton(onPressed: onCreate, icon: const Icon(Icons.add))],
       ),
-      body: content,
+      // body: content,
+      body: IndexedStack(
+        index: currentTab.index,
+        children: [
+          Container(child: content),
+          SearchTab(searchController: searchController, onSearch: searchItem, results: filteredItems),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentTab.index,
+        selectedItemColor: Colors.red,
+        onTap: (index) {
+          setState(() {
+            currentTab = Tab.values[index];
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_grocery_store),
+            label: "Groceries",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+        ],
+      ),
     );
   }
 }
